@@ -18,6 +18,10 @@ main.o: main.c
 	@echo $@:
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
+lzw-ppm.o: lzw-ppm.c
+	@echo $@:
+	$(CC) $(CFLAGS) -c lzw-ppm.c -o lzw-ppm.o
+
 .PHONY: clean
 
 clean:
