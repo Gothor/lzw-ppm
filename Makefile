@@ -10,11 +10,11 @@ else
     endif
 endif
 
-all: main.o
+all: main.o lzw-ppm.o
 	@echo $@:
-	$(CC) main.o -o $(PROGNAME)
+	$(CC) main.o lzw-ppm.o -o $(PROGNAME)
 
-main.o: main.c
+main.o: main.c lzw-ppm.h
 	@echo $@:
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
