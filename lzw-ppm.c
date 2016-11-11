@@ -1,25 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <assert.h>
 #include "lzw-ppm.h"
 
-#define DICTIONNARY_SIZE_INIT
+#define DICTIONNARY_SIZE_INIT 256
 
 // Variables
 static FILE* source_file = NULL;
 static FILE* destination_file = NULL;
-encoding_e encoding = UNKNOWN;
-static int image_height = 0;
-static int image_width = 0;
-static int image_levels;
 
 static char buffer = 0;
 static int size = 0;
-
-// Méthodes
-static int is_a_separator(char c);
-static char skip_comments();
-static int read_header();
 
 /*******************************************************************************
     $ Ecriture
@@ -103,30 +96,45 @@ typedef struct string string_t;
 int compare_strings(string_t* s1, string_t* s2) {
     int i;
     string_t* s;
-    if (s2.length > s1.length) {
+    if (s2->length < s1->length) {
         s = s2;
         s2 = s1;
         s1 = s;
     }
-    for (i = 0; i < s1.length; i++) {
-        if (s1[i] < s2[i])
+    for (i = 0; i < s1->length; i++) {
+        if (s1->str[i] < s2->str[i])
             return -1;
-        if (s1[i] > s2[i])
+        if (s1->str[i] > s2->str[i])
             return 1;
     }
-    if (s1.length != s2.length)
+    if (s1->length != s2->length)
         return -1;
     return 0;
 }
 
-static string_t* dictionnary = NULL;
+string_t* copy_string(string_t* str) {
+    int i;
+    
+    string_t* res = malloc(sizeof(*res));
+    assert(res);
+    res->length = str->length;
+    res->str = malloc(res->length * sizeof(*res->str));
+    assert(res->str);
+    
+    for (i = 0; i < str->length; i++)
+        res->str[i] = str->str[i];
+    
+    return res;
+}
+
+static string_t** dictionnary = NULL;
 static int dictionnary_size = 0;
 static int dictionnary_size_max = 256;
 
 int find_in_dictionnary(string_t* str) {
     int i;
     for (i = 0; i < dictionnary_size; i++) {
-        if (dictionnary[i].str == NULL)
+        if (dictionnary[i]->str == NULL)
             return -1;
         if (compare_strings(str, dictionnary[i]) == 0)
             return i;
@@ -139,13 +147,14 @@ int add_in_dictionnary(string_t* str) {
         dictionnary = realloc(dictionnary, dictionnary_size_max + DICTIONNARY_SIZE_INIT);
         if (dictionnary == NULL) {
             fprintf(stderr, "Erreur lors de la reallocation du dictionnaire.\n");
-            exit(-1);
+            return 0;
         }
         dictionnary_size_max += DICTIONNARY_SIZE_INIT;
     }
     
-    dictionnary[i] = copy_string(str);
-    dictionnary_size++;
+    dictionnary[dictionnary_size++] = copy_string(str);
+    
+    return 1;
 }
 
 /**
@@ -166,17 +175,15 @@ int lzw_ppm(char* src, char* dst) {
     
     source_file = fopen(src, "r");
     if (source_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier source.\n");
+        fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n", src);
         return -1;
     }
     
-    destination_file = fopen(dst, "w");
+    destination_file = fopen(dst ? dst : "output.xppm", "w");
     if (destination_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier destination.\n");
+        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", dst);
         return -1;
     }
-    
-    
     
     fclose(source_file);
     fclose(destination_file);
