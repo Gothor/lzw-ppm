@@ -220,7 +220,7 @@ int lzw_ppm(char* src, char* dst) {
         return -1;
     }
     
-    destination_file = fopen(dst ? dst : "output.xppm", "w");
+    destination_file = fopen(dst, "a");
     if (destination_file == NULL) {
         fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", dst);
         return -1;
