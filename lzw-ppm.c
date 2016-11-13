@@ -127,6 +127,16 @@ string_t* copy_string(string_t* str) {
     return res;
 }
 
+void free_string(string_t* s) {
+    if (s == NULL)
+        return ;
+    
+    if (s->str != NULL)
+        free(s->str);
+    
+    free(s);
+}
+
 static string_t** dictionnary = NULL;
 static int dictionnary_size = 0;
 static int dictionnary_size_max = 256;
@@ -155,6 +165,17 @@ int add_in_dictionnary(string_t* str) {
     dictionnary[dictionnary_size++] = copy_string(str);
     
     return 1;
+}
+
+void free_dictionnary() {
+    int i;
+    
+    for (i = 0; i < dictionnary_size; i++)
+        free_string(dictionnary[i]);
+    
+    free(dictionnary);
+    dictionnary_size = 0;
+    dictionnary_size_max = 0;
 }
 
 /**
