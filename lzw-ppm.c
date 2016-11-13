@@ -7,12 +7,32 @@
 
 #define DICTIONNARY_SIZE_INIT 256
 
-// Variables
+// Static variables
+
 static FILE* source_file = NULL;
 static FILE* destination_file = NULL;
 
 static char buffer = 0;
 static int size = 0;
+
+// Prototypes
+
+#ifdef DEBUG
+    static void  print_buffer();
+#endif
+
+static int       write_bits(unsigned int v, int n);
+static void      flush_buffer();
+
+static int       compare_strings(string_t* s1, string_t* s2);
+static string_t* copy_string(string_t* str);
+static void      free_string(string_t* s);
+
+static int       find_in_dictionnary(string_t* str);
+static int       add_in_dictionnary(string_t* str);
+static void      free_dictionnary();
+
+static void      lzw_ppm_init();
 
 /*******************************************************************************
     $ Ecriture
