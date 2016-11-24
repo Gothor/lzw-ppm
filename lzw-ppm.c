@@ -1,3 +1,8 @@
+/**
+ * @TODO Remove this f***ing lecture variable.
+ * @TODO Make it works for big files !
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
