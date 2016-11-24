@@ -8,6 +8,8 @@ static int decomposed = 0;
 int main (int argc, char* argv[]) {
     int i;
     int opt = 0;
+    FILE* source_file = NULL;
+    FILE* destination_file = NULL;
     
     for (i = 0; i < argc; i++) {
         if (**(argv + i) == '-') {
@@ -30,12 +32,46 @@ int main (int argc, char* argv[]) {
         fprintf(stderr, "Usage: lzw-ppm [options] src [dst]\n");
         return -1;
     }
+
+    // Compression
     
-    lzw_ppm(argv[argc - opt - 1], ".compressed");
+    source_file = fopen(argv[argc - opt - 1], "r");
+    if (source_file == NULL) {
+        fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n", argv[argc - opt - 1]);
+        return -1;
+    }
+    
+    destination_file = fopen(".compressed", "w");
+    if (destination_file == NULL) {
+        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", ".compressed");
+        return -1;
+    }
+       
+    lzw_ppm(source_file, destination_file);
     printf("Compression terminée dans le fichier \".compressed\".\n");
     
-    unlzw_ppm(".compressed", ".uncompressed");
-    printf("Déompression terminée dans le fichier \".uncompressed\".\n");
+    fclose(destination_file);
+    fclose(source_file);
+
+    // Décompression
+
+    source_file = fopen(".compressed", "r");
+    if (source_file == NULL) {
+        fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n", ".compressed");
+        return -1;
+    }
     
+    destination_file = fopen(".uncompressed", "w");
+    if (destination_file == NULL) {
+        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", ".uncompressed");
+        return -1;
+    }
+       
+    unlzw_ppm(source_file, destination_file);
+    printf("Décompression terminée dans le fichier \".uncompressed\".\n");
+    
+    fclose(destination_file);
+    fclose(source_file);
+
     return 0;
 }

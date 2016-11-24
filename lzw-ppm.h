@@ -9,7 +9,7 @@ struct string {
 };
 typedef struct string string_t;
 
-int lzw_ppm(char* src, char* dst);
-int unlzw_ppm(char* src, char* dst);
+int lzw_ppm(FILE* src, FILE* dst);
+int unlzw_ppm(FILE* src, FILE* dst);
 
 #endif // LZW_PPM_H_INCLUDED

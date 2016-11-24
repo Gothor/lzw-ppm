@@ -325,26 +325,26 @@ static void extend_current_word(char c) {
 /**
  * Effectue une compression LZW sur un fichier PPM.
  */
-int lzw_ppm(char* src, char* dst) {
+int lzw_ppm(FILE* src, FILE* dst) {
     unsigned int pos = 0;
     int newpos;
+    int i;
+    int t;
     
-    source_file = fopen(src, "r");
+    source_file = src;
+    destination_file = dst;
     if (source_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n", src);
+        fprintf(stderr, "Aucun fichier source transmis.\n");
         return -1;
     }
-    
-    destination_file = fopen(dst, "w");
     if (destination_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", dst);
+        fprintf(stderr, "Aucun fichier destination transmis.\n");
         return -1;
     }
-    
+
     lzw_ppm_init();
     
     // LZW
-    int t;
     while((t = fgetc(source_file)) != EOF) {
         current_char = (char) t;
         extend_current_word(current_char);
@@ -361,13 +361,11 @@ int lzw_ppm(char* src, char* dst) {
         }
         else {
             if (newpos == -2) {
-                fclose(source_file);
-                fclose(destination_file);
                 fprintf(stderr, "Problème de dictionnaire :");
-                int i;
                 for (i = 0; i < dictionnary_size; i++)
                     fprintf(stderr, "(%d)%s", i, dictionnary[i]->str);
-                exit(-1);
+                lzw_ppm_free();
+                return -1;
             }
             #ifdef DEBUG
             fprintf(stderr, "Pas trouvé (%d, %d bits) - Ajout du mot n°%d : ", pos, needed_bits, dictionnary_size);
@@ -390,9 +388,6 @@ int lzw_ppm(char* src, char* dst) {
     flush_buffer(destination_file);
     
     lzw_ppm_free();
-    
-    fclose(source_file);
-    fclose(destination_file);
     
     return 0;
 }
@@ -497,21 +492,20 @@ int read_bits(FILE* f, int n) {
 /**
  * Effectue une décompression LZW sur un fichier PPM.
  */
-int unlzw_ppm(char* src, char* dst) {
+int unlzw_ppm(FILE* src, FILE* dst) {
     lecture = 1;
     unsigned int code;
     int i;
     string_t* s = NULL;
     
-    source_file = fopen(src, "r");
+    source_file = src;
+    destination_file = dst;
     if (source_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n", src);
+        fprintf(stderr, "Aucun fichier source transmis.\n");
         return -1;
     }
-    
-    destination_file = fopen(dst, "w");
     if (destination_file == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n", dst);
+        fprintf(stderr, "Aucun fichier destination transmis.\n");
         return -1;
     }
     
@@ -581,9 +575,6 @@ int unlzw_ppm(char* src, char* dst) {
     printf("%d char lus\n", lus);
     
     lzw_ppm_free();
-    
-    fclose(source_file);
-    fclose(destination_file);
     
     return 0;
 }
