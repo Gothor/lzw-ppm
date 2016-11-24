@@ -1,6 +1,8 @@
 /**
  * @TODO Remove this f***ing lecture variable.
  * @TODO Make it works for big files !
+ * @TODO React properly if realloc of dictionnary and current_word doesn't work
+ * @TODO Change buffer type to int
  */
 
 #include <stdio.h>
@@ -304,9 +306,16 @@ static void lzw_ppm_free() {
 }
 
 static void extend_current_word(char c) {
+    string_t* tmp = NULL;
     if (current_word->length + 1 >= current_word_max_size) {
-        realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
-        assert(current_word->str);
+        tmp = realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
+        if (tmp == NULL) {
+            lzw_ppm_free();
+            exit(-1);
+	}
+        else {
+            current_word = tmp;
+        }
         current_word_max_size += DICTIONNARY_SIZE_INIT;
     }
     
@@ -388,6 +397,7 @@ int lzw_ppm(char* src, char* dst) {
     return 0;
 }
 
+int lus = 0;
 int read_bits(FILE* f, int n) {
     int code;
     unsigned char b;
@@ -395,8 +405,10 @@ int read_bits(FILE* f, int n) {
     int i;
     #endif
     
-    if (needed_bits > 32)
+    if (needed_bits > 32) {
+        printf("Mais vous êtes fou !\n");
         return -1;
+    }
     
     if (n < size) {
         code = buffer >> (8 - n);
@@ -415,6 +427,9 @@ int read_bits(FILE* f, int n) {
     n -= size;
     while (n > 8) {
         buffer = fgetc(f);
+        #ifdef DEBUG
+        fprintf(stderr, "%d char lus\n", ++lus);
+        #endif
         if (buffer == EOF)
             return -1;
         code = (code << 8);
@@ -437,8 +452,13 @@ int read_bits(FILE* f, int n) {
     
     if (n > 0) {
         buffer = fgetc(f);
-        if (buffer == EOF)
+        #ifdef DEBUG
+        fprintf(stderr, "%d char lus\n", ++lus);
+        #endif
+        if (buffer == EOF) {
+            printf("Mais c'est la fin !\n");
             return -1;
+        }
         code = (code << n);
         #ifdef ADEBUG
         fprintf(stderr, "------ Code :   ");
@@ -557,6 +577,8 @@ int unlzw_ppm(char* src, char* dst) {
         current_word = copy_string(s);
         free_string(s);
     }
+
+    printf("%d char lus\n", lus);
     
     lzw_ppm_free();
     
