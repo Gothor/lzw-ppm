@@ -10,9 +10,14 @@ else
     endif
 endif
 
-all: main.o lzw-ppm.o
+all: program
+
+debug: CFLAGS += -DDEBUG
+debug: program
+
+program: main.o
 	@echo $@:
-	$(CC) main.o lzw-ppm.o -o $(PROGNAME)
+	$(CC) main.o -o $(PROGNAME)
 
 main.o: main.c
 	@echo $@:
@@ -22,7 +27,7 @@ lzw-ppm.o: lzw-ppm.c
 	@echo $@:
 	$(CC) $(CFLAGS) -c lzw-ppm.c -o lzw-ppm.o
 
-.PHONY: clean
+.PHONY: clean program
 
 clean:
 	$(RM) *.o
