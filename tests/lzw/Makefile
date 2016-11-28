@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -DDEBUG
+CFLAGS=-Wall
 PROGNAME=lzw
 
 ifdef FORWINDOWS
@@ -10,7 +10,12 @@ else
     endif
 endif
 
-all: main.o lzw-ppm.o
+all: program
+    
+debug: CFLAGS += -DDEBUG
+debug: program
+
+program: main.o lzw-ppm.o
 	@echo $@:
 	$(CC) main.o lzw-ppm.o -o $(PROGNAME)
 

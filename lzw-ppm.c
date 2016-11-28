@@ -2,7 +2,7 @@
  * @TODO Remove this f***ing lecture variable.
  * @TODO Make it works for big files !
  * @TODO React properly if realloc of dictionnary and current_word doesn't work
- * @TODO Change buffer type to int
+ * @TODO Enlever PHONY program dans le Makefile
  */
 
 #include <stdio.h>
@@ -15,43 +15,45 @@
 #define DICTIONNARY_SIZE_INIT   256
 #define NEEDED_BITS_INIT        8
 
+#define MAX(a,b)                ((a) >= (b) ? (a) : (b))
+
 // Static variables
 
-static FILE*        source_file = NULL;
-static FILE*        destination_file = NULL;
+static FILE*            source_file = NULL;
+static FILE*            destination_file = NULL;
 
-static char         buffer = 0;
-static int          size = 0;
-static int          needed_bits;
+static char             buffer = 0;
+static int              size = 0;
+static int              needed_bits;
 
-static string_t*    current_word = NULL;
-static int          current_word_max_size;
-static char         current_char;
+static string_t*        current_word = NULL;
+static int              current_word_max_size;
+static unsigned char    current_char;
 
-static string_t**   dictionnary = NULL;
-static int          dictionnary_size;
-static int          dictionnary_size_max;
+static string_t**       dictionnary = NULL;
+static int              dictionnary_size;
+static int              dictionnary_size_max;
 
 // Prototypes
 
 #ifdef DEBUG
-static void         print_buffer();
+static void             print_buffer();
 #endif
 
-static int          write_bits(unsigned int v, int n, FILE* f);
-static void         flush_buffer(FILE* f);
+static int              write_bits(unsigned int v, int n, FILE* f);
+static void             flush_buffer(FILE* f);
 
-static int          compare_strings(string_t* s1, string_t* s2);
-static string_t*    copy_string(string_t* str);
-static void         free_string(string_t* s);
+static int              compare_strings(string_t* s1, string_t* s2);
+static string_t*        copy_string(string_t* str);
+static void             free_string(string_t* s);
 
-static int          find_in_dictionnary(string_t* str);
-static int          add_in_dictionnary(string_t* str);
-static void         free_dictionnary();
+static int              find_in_dictionnary(string_t* str);
+static int              add_in_dictionnary(string_t* str);
+static void             free_dictionnary();
 
-static void         lzw_ppm_init();
-static void         lzw_ppm_free();
-static void         extend_current_word(char);
+static void             lzw_ppm_init();
+static void             lzw_ppm_free();
+static void             extend_current_word(char);
 
 /*******************************************************************************
     $ Ecriture
@@ -214,15 +216,12 @@ static int find_in_dictionnary(string_t* str) {
     
     if (str->length == 1)
         return *str->str;
-    // printf("Dictionnary size = %d/%d\n", dictionnary_size, dictionnary_size_max);
     for (i = 0; i < dictionnary_size; i++) {
-        // printf("%d-", i);
         if(dictionnary[i] == NULL || dictionnary[i]->str == NULL)
             return -2;
         if (compare_strings(str, dictionnary[i]) == 0)
             return i + 256;
     }
-    // printf("\n");
     return -1;
 }
 int lecture = 0;
@@ -232,10 +231,13 @@ int lecture = 0;
 static int add_in_dictionnary(string_t* str) {
     //static string_t** tmp = NULL;
     if (dictionnary_size == dictionnary_size_max) {
-        dictionnary = realloc(dictionnary, (dictionnary_size_max + DICTIONNARY_SIZE_INIT) * sizeof(*dictionnary));
+        dictionnary = realloc(dictionnary,
+            (dictionnary_size_max + DICTIONNARY_SIZE_INIT) *
+            sizeof(*dictionnary));
         assert(dictionnary);
         if (dictionnary == NULL) {
-            fprintf(stderr, "Erreur lors de la reallocation du dictionnaire.\n");
+            fprintf(stderr, "Erreur lors de la reallocation du "
+            "dictionnaire.\n");
             return 0;
         }
         dictionnary_size_max += DICTIONNARY_SIZE_INIT;
@@ -279,11 +281,13 @@ static void lzw_ppm_init() {
     size = 0;
     
     current_word = (string_t*) malloc(sizeof(*current_word));
-    current_word->str = (char*) malloc(DICTIONNARY_SIZE_INIT * sizeof(*current_word->str));
+    current_word->str = (char*) malloc(DICTIONNARY_SIZE_INIT *
+        sizeof(*current_word->str));
     current_word->length = 0;
     current_word_max_size = DICTIONNARY_SIZE_INIT;
     
-    dictionnary = (string_t**) malloc(sizeof(*dictionnary) * DICTIONNARY_SIZE_INIT);
+    dictionnary = (string_t**) malloc(sizeof(*dictionnary) *
+        DICTIONNARY_SIZE_INIT);
     memset(dictionnary, 0, DICTIONNARY_SIZE_INIT * sizeof(*dictionnary));
     dictionnary_size = 0;
     dictionnary_size_max = DICTIONNARY_SIZE_INIT;
@@ -308,7 +312,8 @@ static void lzw_ppm_free() {
 static void extend_current_word(char c) {
     string_t* tmp = NULL;
     if (current_word->length + 1 >= current_word_max_size) {
-        tmp = realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
+        tmp = realloc(current_word->str, current_word_max_size +
+            DICTIONNARY_SIZE_INIT);
         if (tmp == NULL) {
             lzw_ppm_free();
             exit(-1);
@@ -346,7 +351,7 @@ int lzw_ppm(FILE* src, FILE* dst) {
     
     // LZW
     while((t = fgetc(source_file)) != EOF) {
-        current_char = (char) t;
+        current_char = (unsigned char) t;
         extend_current_word(current_char);
         #ifdef DEBUG
         fprintf(stderr, "\nMot : ");
@@ -368,7 +373,8 @@ int lzw_ppm(FILE* src, FILE* dst) {
                 return -1;
             }
             #ifdef DEBUG
-            fprintf(stderr, "Pas trouvé (%d, %d bits) - Ajout du mot n°%d : ", pos, needed_bits, dictionnary_size);
+            fprintf(stderr, "Pas trouvé (%d, %d bits) - Ajout du mot n°%d : ",
+                pos, needed_bits, dictionnary_size);
             print_string(current_word);
             fprintf(stderr, "\n");
             #endif
@@ -395,6 +401,7 @@ int lzw_ppm(FILE* src, FILE* dst) {
 int lus = 0;
 int read_bits(FILE* f, int n) {
     int code;
+    int c;
     unsigned char b;
     #ifdef ADEBUG
     int i;
@@ -421,12 +428,14 @@ int read_bits(FILE* f, int n) {
     #endif
     n -= size;
     while (n > 8) {
-        buffer = fgetc(f);
+        c = fgetc(f);
+        buffer = (char) c;
         #ifdef DEBUG
         fprintf(stderr, "%d char lus\n", ++lus);
         #endif
-        if (buffer == EOF)
+        if (c == EOF) {
             return -1;
+        }
         code = (code << 8);
         #ifdef ADEBUG
         fprintf(stderr, "---- Code (1) : ");
@@ -446,12 +455,12 @@ int read_bits(FILE* f, int n) {
     }
     
     if (n > 0) {
-        buffer = fgetc(f);
+        c = fgetc(f);
+        buffer = (char) c;
         #ifdef DEBUG
         fprintf(stderr, "%d char lus\n", ++lus);
         #endif
-        if (buffer == EOF) {
-            printf("Mais c'est la fin !\n");
+        if (c == EOF) {
             return -1;
         }
         code = (code << n);
@@ -561,7 +570,9 @@ int unlzw_ppm(FILE* src, FILE* dst) {
         fprintf(stderr, "New char = %c\n", s->str[0]);
         fprintf(stderr, "Needed bits = %d\n", needed_bits);
         fprintf(stderr, "Dictionnary_size = %d :\n", dictionnary_size);
-        for (i = 0; i < dictionnary_size; i++) {
+        if (dictionnary_size > 10)
+            fprintf(stderr, "...\n");
+        for (i = MAX(dictionnary_size - 10, 0); i < dictionnary_size; i++) {
             fprintf(stderr, "- (%d)", i + 256);
             print_string(dictionnary[i]);
             fprintf(stderr, "\n");
@@ -572,8 +583,6 @@ int unlzw_ppm(FILE* src, FILE* dst) {
         free_string(s);
     }
 
-    printf("%d char lus\n", lus);
-    
     lzw_ppm_free();
     
     return 0;
