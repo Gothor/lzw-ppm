@@ -310,17 +310,15 @@ static void lzw_ppm_free() {
 }
 
 static void extend_current_word(char c) {
-    string_t* tmp = NULL;
+    char* tmp = NULL;
     if (current_word->length + 1 >= current_word_max_size) {
         tmp = realloc(current_word->str, current_word_max_size +
             DICTIONNARY_SIZE_INIT);
         if (tmp == NULL) {
             lzw_ppm_free();
             exit(-1);
-	}
-        else {
-            current_word = tmp;
-        }
+	    }
+        current_word->str = tmp;
         current_word_max_size += DICTIONNARY_SIZE_INIT;
     }
     
@@ -498,6 +496,23 @@ int read_bits(FILE* f, int n) {
     return code;
 }
 
+static void copy_string_to_current(string_t* str) {
+    char* tmp = NULL;
+    int i;
+    while (str->length > current_word_max_size) {
+        tmp = realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
+        if (tmp == NULL) {
+            lzw_ppm_free();
+            exit(-1);
+	    }
+	    current_word->str = tmp;
+	    current_word_max_size += DICTIONNARY_SIZE_INIT;
+    }
+    
+    for (i = 0; i < str->length; i++)
+        current_word->str[i] = str->str[i];
+    current_word->length = str->length;
+}
 /**
  * Effectue une décompression LZW sur un fichier PPM.
  */
@@ -578,8 +593,9 @@ int unlzw_ppm(FILE* src, FILE* dst) {
             fprintf(stderr, "\n");
         }
         #endif
-        free_string(current_word);
-        current_word = copy_string(s);
+        //free_string(current_word);
+        //current_word = copy_string_to_current(s);
+        copy_string_to_current(s);
         free_string(s);
     }
 
