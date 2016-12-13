@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "ppm-exploder.h"
 
 // Static variables
@@ -10,6 +11,7 @@ static FILE*    destination_file_red = NULL;
 static FILE*    destination_file_green = NULL;
 static FILE*    destination_file_blue = NULL;
 
+encoding_e      encoding = UNKNOWN;
 static int      image_height = 0;
 static int      image_width = 0;
 static int      image_levels = 0;
@@ -161,5 +163,7 @@ int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b) {
             "bleue.\n");
         return -1;
     }*/
+    
+    return 0;
 }
 
