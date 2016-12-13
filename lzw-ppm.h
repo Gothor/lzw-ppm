@@ -1,19 +1,15 @@
 #ifndef LZW_PPM_H_INCLUDED
 #define LZW_PPM_H_INCLUDED
 
-enum encoding {
-    UNKNOWN = 0,
-    ASCII   = 3,
-    BINARY  = 6
+// Types
+struct string {
+    char* str;
+    int length;
+    int num;
 };
-typedef enum encoding encoding_e;
+typedef struct string string_t;
 
-int  write_bits(unsigned int v, int n);
-void flush_buffer();
-int  lzw_ppm(char* src, char* dst);
-
-#ifdef DEBUG
-    void print_buffer();
-#endif
+int lzw_ppm(FILE* src, FILE* dst);
+int unlzw_ppm(FILE* src, FILE* dst);
 
 #endif // LZW_PPM_H_INCLUDED

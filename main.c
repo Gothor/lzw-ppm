@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lzw-ppm.h"
 
 /* Options */
 static int decomposed = 0;
@@ -17,9 +16,7 @@ int main (int argc, char* argv[]) {
                 fprintf(stderr, "Usage: lzw-ppm [options] src [dst]\n");
                 fprintf(stderr, "options:\n");
                 fprintf(stderr, "\t-h prints this help\n");
-                fprintf(stderr, "\t-d to specify a decomposed image (header: " \
-                    "<image>.hppm, red: <image>.rppm, green: <image.rppm>, " \
-                    "blue: <image.rppm>)\n");
+                fprintf(stderr, "\t-d to specify a decomposed image (header: <image>.hppm, red: <image>.rppm, green: <image.rppm>, blue: <image.rppm>)\n");
                 return -1;
             case 'd':
                 decomposed = 1;
@@ -33,5 +30,5 @@ int main (int argc, char* argv[]) {
         return -1;
     }
     
-    return lzw_ppm("res/mire_hsv.ppm", "res/output");
+    return 0;
 }

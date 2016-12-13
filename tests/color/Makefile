@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall
-PROGNAME=lzw-ppm
+PROGNAME=color
 
 ifdef FORWINDOWS
 	RM=del /Q
@@ -11,23 +11,23 @@ else
 endif
 
 all: program
-
+    
 debug: CFLAGS += -DDEBUG
 debug: program
 
-program: main.o
+program: main.o color.o
 	@echo $@:
-	$(CC) main.o -o $(PROGNAME)
+	$(CC) main.o color.o -o $(PROGNAME)
 
-main.o: main.c lzw-ppm.h
+main.o: main.c ../../color.h
 	@echo $@:
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
-lzw-ppm.o: lzw-ppm.c
+color.o: ../../color.c
 	@echo $@:
-	$(CC) $(CFLAGS) -c lzw-ppm.c -o lzw-ppm.o
+	$(CC) $(CFLAGS) -c ../../color.c -o color.o
 
-.PHONY: clean program
+.PHONY: clean
 
 clean:
 	$(RM) *.o
