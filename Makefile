@@ -31,7 +31,7 @@ ppm-parser.o: ppm-parser.c
 	@echo $@:
 	$(CC) $(CFLAGS) -c ppm-parser.c -o ppm-parser.o
 
-.PHONY: clean program
+.PHONY: clean
 
 clean:
 	$(RM) *.o
