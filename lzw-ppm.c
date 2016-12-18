@@ -1,5 +1,4 @@
 /**
- * @TODO Remove this f***ing lecture variable.
  * @TODO Make it works for big files !
  * @TODO React properly if realloc of dictionnary and current_word doesn't work
  * @TODO Enlever PHONY program dans le Makefile
@@ -224,7 +223,7 @@ static int find_in_dictionnary(string_t* str) {
     }
     return -1;
 }
-int lecture = 0;
+
 /**
  * Ajoute une entree au dictionnaire.
  */
@@ -244,17 +243,6 @@ static int add_in_dictionnary(string_t* str) {
     }
     
     dictionnary[dictionnary_size++] = copy_string(str);
-    
-    // Si la taille du dictionnaire a atteint une puissance de 2,
-    // on augmente le nombre de bits à ecrire.
-    // 1 >= 1 (2); 2 >= 2 (4); 3 >= 4 (4); 4 >= 4 (8)
-    if (!lecture) {
-        if (255 + dictionnary_size >= (1 << needed_bits) - 1)
-            needed_bits++;
-    }
-    else
-        if (255 + dictionnary_size >= (1 << needed_bits) - 2)
-            needed_bits++;
         
     return 1;
 }
@@ -382,6 +370,12 @@ int lzw_ppm(FILE* src, FILE* dst) {
             #endif
             write_bits(pos, needed_bits, destination_file);
             add_in_dictionnary(current_word);
+    
+            // Si la taille du dictionnaire a atteint une puissance de 2,
+            // on augmente le nombre de bits à ecrire.
+            // 1 >= 1 (2); 2 >= 2 (4); 3 >= 4 (4); 4 >= 4 (8)
+            if (255 + dictionnary_size >= (1 << needed_bits) - 1)
+                needed_bits++;
             
             // On reinitialise le mot courant avec le nouveau caractère
             *current_word->str = current_char;
@@ -522,7 +516,6 @@ static void copy_string_to_current(string_t* str) {
  * Effectue une décompression LZW sur un fichier PPM.
  */
 int unlzw_ppm(FILE* src, FILE* dst) {
-    lecture = 1;
     unsigned int code;
     int i;
     string_t* s = NULL;
@@ -586,6 +579,8 @@ int unlzw_ppm(FILE* src, FILE* dst) {
             fputc(s->str[i], destination_file);
         extend_current_word(s->str[0]);
         add_in_dictionnary(current_word);
+        if (255 + dictionnary_size >= (1 << needed_bits) - 2)
+            needed_bits++;
         #ifdef DEBUG
         fprintf(stderr, "New char = %c\n", s->str[0]);
         fprintf(stderr, "Needed bits = %d\n", needed_bits);
