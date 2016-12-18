@@ -4,7 +4,7 @@
 
 #define NB_DST_FILES    4
 
-static int toHSV = 0;
+static int modeHSV = 0;
 
 int main (int argc, char* argv[]) {
     int i;
@@ -27,7 +27,7 @@ int main (int argc, char* argv[]) {
                 fprintf(stderr, "\t-m convert colors to HSV\n");
                 return -1;
             case 'm':
-                toHSV = 1;
+                modeHSV = 1;
                 break;
             }
         }
@@ -56,7 +56,7 @@ int main (int argc, char* argv[]) {
     }
     
     // On bosse
-    explode_ppm(src, dst[0], dst[1], dst[2], dst[3], toHSV);
+    explode_ppm(src, dst[0], dst[1], dst[2], dst[3], modeHSV);
     
     // Et on les referme
     fclose(src);
@@ -82,7 +82,7 @@ int main (int argc, char* argv[]) {
             return -1;
         }
         
-        merge_ppm(dst[0], dst[1], dst[2], dst[3], dst_merge);
+        merge_ppm(dst[0], dst[1], dst[2], dst[3], dst_merge, modeHSV);
         
         // Et on les referme
         fclose(dst_merge);

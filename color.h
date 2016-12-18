@@ -32,5 +32,6 @@ int color_value(color_t* c);
 int color_alpha(color_t* c);
 
 int color_rgb_to_hsv(int c);
+int color_hsv_to_rgb(int c);
 
 #endif // COLOR_H_INCLUDED

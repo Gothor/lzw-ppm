@@ -10,6 +10,7 @@ typedef enum encoding encoding_e;
 
 int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b,
     int toHSV);
-int merge_ppm(FILE* src_h, FILE* src_r, FILE* src_g, FILE* src_b, FILE* dst);
+int merge_ppm(FILE* src_h, FILE* src_r, FILE* src_g, FILE* src_b, FILE* dst,
+    int fromHSV);
 
 #endif // PPM_EXPLODER_H_INCLUDED

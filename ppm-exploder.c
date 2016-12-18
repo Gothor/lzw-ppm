@@ -128,9 +128,11 @@ static int extract_header() {
         return 1;
     }
     
+    #if DEBUG
     fprintf(stderr, "Hauteur de l'image : %dpx\n", image_height);
     fprintf(stderr, "Largeur de l'image : %dpx\n", image_width);
     fprintf(stderr, "Niveaux de l'image : %d\n", image_levels + 1);
+    #endif
     
     c = skip_comments();
     
@@ -165,17 +167,12 @@ static int extract_content(int toHSV) {
         }
         color |= c;
         
-        if (!toHSV) {
-            fputc((unsigned char) color >> 16, red);
-            fputc((unsigned char) color >> 8,  green);
-            fputc((unsigned char) color,       blue);
-        }
-        else {
+        if (toHSV)
             color = color_rgb_to_hsv(color);
-            fputc((unsigned char) color >> 16, red);
-            fputc((unsigned char) color >> 8,  green);
-            fputc((unsigned char) color,       blue);
-        }
+            
+        fputc(color >> 16 & 0xFF, red);
+        fputc(color >> 8 & 0xFF,  green);
+        fputc(color & 0xFF,       blue);
     }
     
     return 0;
@@ -219,8 +216,10 @@ int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b,
     return 0;
 }
 
-int merge_ppm(FILE* src_h, FILE* src_r, FILE* src_g, FILE* src_b, FILE* dst) {
-    int c;
+int merge_ppm(FILE* src_h, FILE* src_r, FILE* src_g, FILE* src_b, FILE* dst,
+    int fromHSV) {
+    int c, color = 0;
+    int eof = 0;
     
     image = dst;
     header = src_h;
@@ -254,10 +253,57 @@ int merge_ppm(FILE* src_h, FILE* src_r, FILE* src_g, FILE* src_b, FILE* dst) {
     
     while ((c = copy_char(header, image)) != EOF);
     c = 0;
-    while (c != EOF) {
-        c = copy_char(red, image);
-        c = copy_char(green, image);
-        c = copy_char(blue, image);
+    while (!eof) {
+        c = fgetc(red);
+        if (c == EOF) {
+            eof = 1;
+        }
+        else {
+            color = c << 16;
+        }
+        
+        c = fgetc(green);
+        if (c == EOF) {
+            if (!eof) {
+                fprintf(stderr, "Erreur lors de la lecture des fichiers de "
+                    "couleurs. Les fichiers sont de tailles différentes.\n");
+                return 1;
+            }
+            eof = 1;
+        }
+        else {
+            if (eof) {
+                fprintf(stderr, "Erreur lors de la lecture des fichiers de "
+                    "couleurs. Les fichiers sont de tailles différentes.\n");
+                return 1;
+            }
+            color |= c << 8;
+        }
+        
+        c = fgetc(blue);
+        if (c == EOF) {
+            if (!eof) {
+                fprintf(stderr, "Erreur lors de la lecture des fichiers de "
+                    "couleurs. Les fichiers sont de tailles différentes.\n");
+                return 1;
+            }
+            eof = 1;
+        }
+        else {
+            if (eof) {
+                fprintf(stderr, "Erreur lors de la lecture des fichiers de "
+                    "couleurs. Les fichiers sont de tailles différentes.\n");
+                return 1;
+            }
+            color |= c;
+        }
+        
+        if (fromHSV)
+            color = color_hsv_to_rgb(color);
+        
+        fputc(color >> 16 & 0xFF, image);
+        fputc(color >> 8 & 0xFF,  image);
+        fputc(color & 0xFF,       image);
     }
     
     return 0;

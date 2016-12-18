@@ -177,10 +177,10 @@ static void hsv_to_rgb(color_t* c) {
         s = SATURATION(c),
         v = VALUE(c),
         hi = h / (255 / 6),
-        f = h / (255 - 6) - hi,
-        l = v * (255 - s),
-        m = v * (255 - f * s),
-        n = v * (255 - (255 - f) * s),
+        f = (int) ((h / (255. / 6) - hi) * 255),
+        l = (v * (255 - s)) / 255,
+        m = (v * (255 - f * s)) / 255,
+        n = (v * (255 - (255 - f) * s)) / 255,
         r,
         g,
         b;
@@ -199,9 +199,9 @@ static void hsv_to_rgb(color_t* c) {
 
 
 int color_rgb_to_hsv(int c) {
-    int r = (unsigned char) c >> 16,
-        g = (unsigned char) c >> 8,
-        b = (unsigned char) c,
+    int r = c >> 16 & 0xFF,
+        g = c >> 8 & 0xFF,
+        b = c & 0xFF,
         max = MAX(r, MAX(g, b)),
         min = MIN(r, MIN(g, b)),
         h,
@@ -229,4 +229,30 @@ int color_rgb_to_hsv(int c) {
     }
     
     return h << 16 | s << 8 | v;
+}
+
+int color_hsv_to_rgb(int c) {
+    int h = c >> 16 & 0xFF,
+        s = (c >> 8) & 0xFF,
+        v = c & 0xFF,
+        hi = h / (255 / 6),
+        f = ((( h / (255. / 6) - hi)) * 255),
+        l = (v * (255 - s)) / 255,
+        m = (v * (255 - f * s / 255.)) / 255,
+        n = (v * (255 - (255 - f) * s / 255.)) / 255,
+        r,
+        g,
+        b;
+        
+        
+    switch(hi) {
+        case 0 : r = v, g = n, b = l; break;
+        case 1 : r = m, g = v, b = l; break;
+        case 2 : r = l, g = v, b = n; break;
+        case 3 : r = l, g = m, b = v; break;
+        case 4 : r = n, g = l, b = v; break;
+        case 5 : r = v, g = l, b = m; break;
+    }
+    
+    return r << 16 | g << 8 | b;
 }
