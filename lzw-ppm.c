@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include "lzw-ppm.h"
+#include "bit_writer.h"
 
 #define DICTIONNARY_SIZE_INIT   256
 #define NEEDED_BITS_INIT        8
@@ -20,8 +21,6 @@
 static FILE*            source_file = NULL;
 static FILE*            destination_file = NULL;
 
-static char             buffer = 0;
-static int              size = 0;
 static int              needed_bits;
 
 static string_t*        current_word = NULL;
@@ -38,9 +37,6 @@ static int              dictionnary_size_max;
 static void             print_buffer();
 #endif
 
-static int              write_bits(unsigned int v, int n, FILE* f);
-static void             flush_buffer(FILE* f);
-
 static int              compare_strings(string_t* s1, string_t* s2);
 static string_t*        copy_string(string_t* str);
 static void             free_string(string_t* s);
@@ -52,98 +48,6 @@ static void             free_dictionnary();
 static void             lzw_ppm_init();
 static void             lzw_ppm_free();
 static void             extend_current_word(char);
-
-/*******************************************************************************
-    $ Ecriture
-*******************************************************************************/
-
-#ifdef DEBUG
-    /**
-     * Affiche le contenu du buffer.
-     */
-    static void print_buffer() {
-        int i;
-        
-        fprintf(stderr, "buffer: (");
-        
-        for (i = 0; i < 8; i++) {
-            if (size == i)
-                fprintf(stderr, "[");
-            fprintf(stderr, "%c", buffer & (1 << (7 - i)) ? '1' : '0');
-            if (i == 3)
-                fprintf(stderr, "'");
-        }
-        fprintf(stderr, "])\n");
-    }
-#endif
-
-/**
- * Ecrit les n bits de poids faible de la chaîne envoyee.
- */
-static int write_bits(unsigned int v, int n, FILE* f) {
-    if (n > 32)
-        return -1;
-    
-    // Si le buffer n'est pas vide, on finit de le remplir
-    if (size + n >= 8) {
-        buffer |= (char) (v >> (n - (8 - size)));
-        fputc(buffer, f);
-        #ifdef DEBUG
-        fprintf(stderr, "---- ");
-        print_buffer();
-        #endif
-        n -= (8 - size);
-        size = 0;
-        buffer = 0;
-    }
-    // Si ce qu'on doit ecrire ne remplit pas le buffer
-    else {
-        buffer |= v << (8 - (n + size));
-        size += n;
-        return 0;
-    }
-    
-    // On ecrit les octets qui remplissent le buffer
-    while (n >= 8) {
-		buffer = (char) (v >> (n % 8 + 8 * (n / 8 - 1)));
-        fputc(buffer, f);
-        #ifdef DEBUG
-        fprintf(stderr, "-------- ");
-        print_buffer();
-        #endif
-        n -= 8;
-    }
-    
-    if (n > 0) {
-        buffer = (char) v << (8 - n);
-        size = n;
-    }
-    else {
-        buffer = 0;
-    }
-    
-    #ifdef DEBUG
-    fprintf(stderr, "-------- Reste : ");
-    print_buffer();
-    #endif
-    
-    return 0;
-}
-
-/**
- * Vide le buffer.
- */
-static void flush_buffer(FILE* f) {
-    if (size != 0) {
-        fputc(buffer, f);
-        #ifdef DEBUG
-        fprintf(stderr, "Vidage du buffer : ");
-        print_buffer();
-        #endif
-        buffer = 0;
-        size = 0;
-    }
-}
 
 /*******************************************************************************
     $ Chaînes de caractères
@@ -268,8 +172,7 @@ static void free_dictionnary() {
  * Initialise les variables pour lzw_ppm
  */
 static void lzw_ppm_init() {
-    buffer = 0;
-    size = 0;
+    flush_buffer(NULL);
     
     current_word = (string_t*) malloc(sizeof(*current_word));
     current_word->str = (char*) malloc(DICTIONNARY_SIZE_INIT *
@@ -391,106 +294,6 @@ int lzw_ppm(FILE* src, FILE* dst) {
     lzw_ppm_free();
     
     return 0;
-}
-
-int lus = 0;
-int read_bits(FILE* f, int n) {
-    int code;
-    int c;
-    unsigned char b;
-    #ifdef ADEBUG
-    int i;
-    #endif
-    
-    if (needed_bits > 32) {
-        printf("Mais vous êtes fou !\n");
-        return -1;
-    }
-    
-    if (n < size) {
-        code = buffer >> (8 - n);
-        buffer <<= n;
-        size -= n;
-        return code;
-    }
-    
-    code = (unsigned char) buffer >> (8 - size);
-    #ifdef ADEBUG
-    fprintf(stderr, "-- Code :       ");
-    for (i = 31; i >= 0; i--)
-        fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
-    fprintf(stderr, "\n");
-    #endif
-    n -= size;
-    while (n > 8) {
-        c = fgetc(f);
-        buffer = (char) c;
-        #ifdef DEBUG
-        fprintf(stderr, "%d char lus\n", ++lus);
-        #endif
-        if (c == EOF) {
-            return -1;
-        }
-        code = (code << 8);
-        #ifdef ADEBUG
-        fprintf(stderr, "---- Code (1) : ");
-        for (i = 31; i >= 0; i--)
-            fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
-        fprintf(stderr, "\n");
-        #endif
-        code += (unsigned char) buffer;
-        #ifdef ADEBUG
-        fprintf(stderr, "---- Code (2) : ");
-        for (i = 31; i >= 0; i--)
-            fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
-        fprintf(stderr, "\n");
-        #endif
-        size = 8;
-        n -= 8;
-    }
-    
-    if (n > 0) {
-        c = fgetc(f);
-        buffer = (char) c;
-        #ifdef DEBUG
-        fprintf(stderr, "%d char lus\n", ++lus);
-        #endif
-        if (c == EOF) {
-            return -1;
-        }
-        code = (code << n);
-        #ifdef ADEBUG
-        fprintf(stderr, "------ Code :   ");
-        for (i = 31; i >= 0; i--)
-            fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
-        fprintf(stderr, "\n");
-        #endif
-        b = 0;
-        b |= buffer;
-        b >>= 8 - n;
-        code |= b;
-        #ifdef ADEBUG
-        fprintf(stderr, "------ Buffer >> (8 - %d) : ", n);
-        for (i = 7; i >= 0; i--)
-            fprintf(stderr, "%c", (buffer >> (8 - n)) & (1 << i) ? '1' : '0');
-        fprintf(stderr, " (%d)\n", size);
-        fprintf(stderr, "------ Code :   ");
-        for (i = 31; i >= 0; i--)
-            fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
-        fprintf(stderr, "\n");
-        #endif
-        buffer <<= n;
-        size = 8 - n;
-    }
-    
-    #ifdef ADEBUG
-    printf("------ Buffer : ");
-    for (i = 7; i >= 0; i--)
-        printf("%c", buffer & (1 << i) ? '1' : '0');
-    printf(" (%d)\n", size);
-    #endif
-    
-    return code;
 }
 
 static void copy_string_to_current(string_t* str) {
