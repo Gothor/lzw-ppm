@@ -1,5 +1,4 @@
 /**
- * @TODO Make it works for big files !
  * @TODO React properly if realloc of dictionnary and current_word doesn't work
  * @TODO Enlever PHONY program dans le Makefile
  */
