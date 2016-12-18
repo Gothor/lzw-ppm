@@ -34,10 +34,6 @@ static int              dictionnary_size_max;
 
 // Prototypes
 
-#ifdef DEBUG
-static void             print_buffer();
-#endif
-
 static int              find_in_dictionnary(string_t* str);
 static int              add_in_dictionnary(string_t* str);
 static void             free_dictionnary();
