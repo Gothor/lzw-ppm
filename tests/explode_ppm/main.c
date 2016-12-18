@@ -4,6 +4,8 @@
 
 #define NB_DST_FILES    4
 
+static int toHSV = 0;
+
 int main (int argc, char* argv[]) {
     int i;
     int opt = 0;
@@ -19,24 +21,28 @@ int main (int argc, char* argv[]) {
             opt++;
             switch (*(*(argv + i) + 1)) {
             case 'h':
-                fprintf(stderr, "Usage: %s src\n", argv[0]);
+                fprintf(stderr, "Usage: %s [options] src\n", argv[0]);
                 fprintf(stderr, "options:\n");
                 fprintf(stderr, "\t-h prints this help\n");
+                fprintf(stderr, "\t-m convert colors to HSV\n");
                 return -1;
+            case 'm':
+                toHSV = 1;
+                break;
             }
         }
     }
     
     if (argc - opt < 2) {
-        fprintf(stderr, "Usage: %s src\n", argv[0]);
+        fprintf(stderr, "Usage: %s [options] src\n", argv[0]);
         return -1;
     }
     
     // On ouvre nos gentils fichiers
-    src = fopen(argv[1], "rb");
+    src = fopen(argv[argc - 1], "rb");
     if (src == NULL) {
         fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n",
-            argv[1]);
+            argv[argc - 1]);
         return -1;
     }
     
@@ -50,7 +56,7 @@ int main (int argc, char* argv[]) {
     }
     
     // On bosse
-    explode_ppm(src, dst[0], dst[1], dst[2], dst[3]);
+    explode_ppm(src, dst[0], dst[1], dst[2], dst[3], toHSV);
     
     // Et on les referme
     fclose(src);

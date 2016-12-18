@@ -31,4 +31,6 @@ int color_saturation(color_t* c);
 int color_value(color_t* c);
 int color_alpha(color_t* c);
 
+int color_rgb_to_hsv(int c);
+
 #endif // COLOR_H_INCLUDED

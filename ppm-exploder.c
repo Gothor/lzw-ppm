@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "ppm-exploder.h"
+#include "color.h"
 
 // Static variables
 
@@ -136,36 +137,52 @@ static int extract_header() {
     return 0;
 }
 
-static int extract_content() {
-    int i, c;
+static int extract_content(int toHSV) {
+    int i, c, color;
     
     for (i = 0; i < image_height * image_width; i++) {
-        c = copy_char(image, red);
+        c = fgetc(image);
         if (c == EOF) {
             fprintf(stderr, "La taille de l'image ne correspond pas à celle "
                 "indiquée dans le fichier.");
             return 1;
         }
+        color = c << 16;
         
-        c = copy_char(image, green);
+        c = fgetc(image);
         if (c == EOF) {
             fprintf(stderr, "La taille de l'image ne correspond pas à celle "
                 "indiquée dans le fichier.");
             return 1;
         }
+        color |= c << 8;
         
-        c = copy_char(image, blue);
+        c = fgetc(image);
         if (c == EOF) {
             fprintf(stderr, "La taille de l'image ne correspond pas à celle "
                 "indiquée dans le fichier.");
             return 1;
+        }
+        color |= c;
+        
+        if (!toHSV) {
+            fputc((unsigned char) color >> 16, red);
+            fputc((unsigned char) color >> 8,  green);
+            fputc((unsigned char) color,       blue);
+        }
+        else {
+            color = color_rgb_to_hsv(color);
+            fputc((unsigned char) color >> 16, red);
+            fputc((unsigned char) color >> 8,  green);
+            fputc((unsigned char) color,       blue);
         }
     }
     
     return 0;
 }
 
-int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b) {
+int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b,
+    int toHSV) {
     image = src;
     header = dst_h;
     red = dst_r;
@@ -197,7 +214,7 @@ int explode_ppm(FILE* src, FILE* dst_h, FILE* dst_r, FILE* dst_g, FILE* dst_b) {
     }
     
     extract_header();
-    extract_content();
+    extract_content(toHSV);
     
     return 0;
 }

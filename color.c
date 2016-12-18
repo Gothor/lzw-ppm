@@ -196,3 +196,37 @@ static void hsv_to_rgb(color_t* c) {
     
     c->rgba = r << 24 | g << 16 | b << 8 | ALPHA(c);
 }
+
+
+int color_rgb_to_hsv(int c) {
+    int r = (unsigned char) c >> 16,
+        g = (unsigned char) c >> 8,
+        b = (unsigned char) c,
+        max = MAX(r, MAX(g, b)),
+        min = MIN(r, MIN(g, b)),
+        h,
+        s,
+        v = max;
+    
+    if (max == min) {
+        h = 0;
+    }
+    else if (max == r) {
+        h = (((255 / 6) * (g - b)) / (max - min) + 255) % 255;
+    }
+    else if (max == g) {
+        h = (((255 / 6) * (b - r)) / (max - min) + 255 / 3);
+    }
+    else if (max == b) {
+        h = (((255 / 6) * (r - g)) / (max - min) + (255 * 2) / 3);
+    }
+    
+    if (max == 0) {
+        s = 0;
+    }
+    else {
+        s = 255 - ((min * 255) / max);
+    }
+    
+    return h << 16 | s << 8 | v;
+}
