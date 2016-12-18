@@ -15,9 +15,9 @@ all: program
 debug: CFLAGS += -DDEBUG
 debug: program
 
-program: main.o lzw-ppm.o bit_writer.o string.o
+program: main.o lzw-ppm.o bit_writer.o dictionnary.o string.o
 	@echo $@:
-	$(CC) main.o lzw-ppm.o bit_writer.o string.o -o $(PROGNAME)
+	$(CC) main.o lzw-ppm.o bit_writer.o string.o dictionnary.o -o $(PROGNAME)
 
 main.o: main.c ../../lzw-ppm.h
 	@echo $@:
@@ -30,6 +30,10 @@ lzw-ppm.o: ../../lzw-ppm.c ../../bit_writer.h ../../string.h
 bit_writer.o: ../../bit_writer.c
 	@echo $@:
 	$(CC) $(CFLAGS) -c ../../bit_writer.c -o bit_writer.o
+
+dictionnary.o: ../../dictionnary.c ../../string.h
+	@echo $@:
+	$(CC) $(CFLAGS) -c ../../dictionnary.c -o dictionnary.o
 
 string.o: ../../string.c
 	@echo $@:

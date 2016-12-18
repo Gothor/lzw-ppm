@@ -5,12 +5,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include <assert.h>
-#include "lzw-ppm.h"
 #include "bit_writer.h"
 #include "string.h"
+#include "dictionnary.h"
+#include "lzw-ppm.h"
 
 #define DICTIONNARY_SIZE_INIT   256
 #define NEEDED_BITS_INIT        8
@@ -28,81 +27,13 @@ static string_t*        current_word = NULL;
 static int              current_word_max_size;
 static unsigned char    current_char;
 
-static string_t**       dictionnary = NULL;
-static int              dictionnary_size;
-static int              dictionnary_size_max;
+static dictionnary_t*   dictionnary = NULL;
 
 // Prototypes
-
-static int              find_in_dictionnary(string_t* str);
-static int              add_in_dictionnary(string_t* str);
-static void             free_dictionnary();
 
 static void             lzw_ppm_init();
 static void             lzw_ppm_free();
 static void             extend_current_word(char);
-
-/*******************************************************************************
-    $ Dictionnaire
-*******************************************************************************/
-
-/**
- * Cherche une entree dans le dictionnaire
- */
-static int find_in_dictionnary(string_t* str) {
-    int i;
-    
-    if (str->length == 1)
-        return *str->str;
-    for (i = 0; i < dictionnary_size; i++) {
-        if(dictionnary[i] == NULL || dictionnary[i]->str == NULL)
-            return -2;
-        if (compare_strings(str, dictionnary[i]) == 0)
-            return i + 256;
-    }
-    return -1;
-}
-
-/**
- * Ajoute une entree au dictionnaire.
- */
-static int add_in_dictionnary(string_t* str) {
-    //static string_t** tmp = NULL;
-    if (dictionnary_size == dictionnary_size_max) {
-        dictionnary = realloc(dictionnary,
-            (dictionnary_size_max + DICTIONNARY_SIZE_INIT) *
-            sizeof(*dictionnary));
-        assert(dictionnary);
-        if (dictionnary == NULL) {
-            fprintf(stderr, "Erreur lors de la reallocation du "
-            "dictionnaire.\n");
-            return 0;
-        }
-        dictionnary_size_max += DICTIONNARY_SIZE_INIT;
-    }
-    
-    dictionnary[dictionnary_size++] = copy_string(str);
-        
-    return 1;
-}
-
-/**
- * Libère la memoire allouee pour le dictionnaire.
- */
-static void free_dictionnary() {
-    int i;
-    
-    for (i = 0; i < dictionnary_size; i++)
-        free_string(dictionnary[i]);
-    
-    free(dictionnary);
-    dictionnary_size = 0;
-    dictionnary_size_max = 0;
-}
-
-/*******************************************************************************
-    $ LZW
-*******************************************************************************/
 
 /**
  * Initialise les variables pour lzw_ppm
@@ -116,11 +47,7 @@ static void lzw_ppm_init() {
     current_word->length = 0;
     current_word_max_size = DICTIONNARY_SIZE_INIT;
     
-    dictionnary = (string_t**) malloc(sizeof(*dictionnary) *
-        DICTIONNARY_SIZE_INIT);
-    memset(dictionnary, 0, DICTIONNARY_SIZE_INIT * sizeof(*dictionnary));
-    dictionnary_size = 0;
-    dictionnary_size_max = DICTIONNARY_SIZE_INIT;
+    dictionnary = new_dictionnary(DICTIONNARY_SIZE_INIT);
     
     needed_bits = NEEDED_BITS_INIT;
 }
@@ -132,9 +59,7 @@ static void lzw_ppm_free() {
     free_string(current_word);
     current_word_max_size = 0;
     
-    free_dictionnary(dictionnary);
-    dictionnary_size = 0;
-    dictionnary_size_max = 0;
+    free_dictionnary(dictionnary, 1);
     
     needed_bits = 0;
 }
@@ -153,6 +78,24 @@ static void extend_current_word(char c) {
     }
     
     *(current_word->str + current_word->length++) = c;
+}
+
+static void copy_string_to_current(string_t* str) {
+    char* tmp = NULL;
+    int i;
+    while (str->length > current_word_max_size) {
+        tmp = realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
+        if (tmp == NULL) {
+            lzw_ppm_free();
+            exit(-1);
+	    }
+	    current_word->str = tmp;
+	    current_word_max_size += DICTIONNARY_SIZE_INIT;
+    }
+    
+    for (i = 0; i < str->length; i++)
+        current_word->str[i] = str->str[i];
+    current_word->length = str->length;
 }
 
 /**
@@ -186,7 +129,7 @@ int lzw_ppm(FILE* src, FILE* dst) {
         print_string(current_word);
         fprintf(stderr, "\n");
         #endif
-        if ((newpos = find_in_dictionnary(current_word)) >= 0) {
+        if ((newpos = find_in_dictionnary(dictionnary, current_word)) >= 0) {
             #ifdef DEBUG
             fprintf(stderr, "trouvé (%d)\n\n", newpos);
             #endif
@@ -195,24 +138,24 @@ int lzw_ppm(FILE* src, FILE* dst) {
         else {
             if (newpos == -2) {
                 fprintf(stderr, "Problème de dictionnaire :");
-                for (i = 0; i < dictionnary_size; i++)
-                    fprintf(stderr, "(%d)%s", i, dictionnary[i]->str);
+                for (i = 0; i < dictionnary->size; i++)
+                    fprintf(stderr, "(%d)%s", i, dictionnary->strings[i]->str);
                 lzw_ppm_free();
                 return -1;
             }
             #ifdef DEBUG
             fprintf(stderr, "Pas trouvé (%d, %d bits) - Ajout du mot n°%d : ",
-                pos, needed_bits, dictionnary_size);
+                pos, needed_bits, dictionnary->size);
             print_string(current_word);
             fprintf(stderr, "\n");
             #endif
             write_bits(pos, needed_bits, destination_file);
-            add_in_dictionnary(current_word);
+            add_in_dictionnary(dictionnary, current_word);
     
             // Si la taille du dictionnaire a atteint une puissance de 2,
             // on augmente le nombre de bits à ecrire.
             // 1 >= 1 (2); 2 >= 2 (4); 3 >= 4 (4); 4 >= 4 (8)
-            if (255 + dictionnary_size >= (1 << needed_bits) - 1)
+            if (255 + dictionnary->size >= (1 << needed_bits) - 1)
                 needed_bits++;
             
             // On reinitialise le mot courant avec le nouveau caractère
@@ -230,24 +173,6 @@ int lzw_ppm(FILE* src, FILE* dst) {
     lzw_ppm_free();
     
     return 0;
-}
-
-static void copy_string_to_current(string_t* str) {
-    char* tmp = NULL;
-    int i;
-    while (str->length > current_word_max_size) {
-        tmp = realloc(current_word->str, current_word_max_size + DICTIONNARY_SIZE_INIT);
-        if (tmp == NULL) {
-            lzw_ppm_free();
-            exit(-1);
-	    }
-	    current_word->str = tmp;
-	    current_word_max_size += DICTIONNARY_SIZE_INIT;
-    }
-    
-    for (i = 0; i < str->length; i++)
-        current_word->str[i] = str->str[i];
-    current_word->length = str->length;
 }
 
 /**
@@ -289,8 +214,8 @@ int unlzw_ppm(FILE* src, FILE* dst) {
             fprintf(stderr, "%c", code & (1 << i) ? '1' : '0');
         fprintf(stderr, "\n");
         #endif
-        if (code > 255 && (code - 255) <= dictionnary_size) {
-            s = copy_string(dictionnary[code - 256]);
+        if (code > 255 && (code - 255) <= dictionnary->size) {
+            s = copy_string(dictionnary->strings[code - 256]);
         }
         else if (code > 255) {
             s = malloc(sizeof(*s));
@@ -316,18 +241,18 @@ int unlzw_ppm(FILE* src, FILE* dst) {
         for (i = 0; i < s->length; i++)
             fputc(s->str[i], destination_file);
         extend_current_word(s->str[0]);
-        add_in_dictionnary(current_word);
-        if (255 + dictionnary_size >= (1 << needed_bits) - 2)
+        add_in_dictionnary(dictionnary, current_word);
+        if (255 + dictionnary->size >= (1 << needed_bits) - 2)
             needed_bits++;
         #ifdef DEBUG
         fprintf(stderr, "New char = %c\n", s->str[0]);
         fprintf(stderr, "Needed bits = %d\n", needed_bits);
-        fprintf(stderr, "Dictionnary_size = %d :\n", dictionnary_size);
-        if (dictionnary_size > 10)
+        fprintf(stderr, "Dictionnary->size = %d :\n", dictionnary->size);
+        if (dictionnary->size > 10)
             fprintf(stderr, "...\n");
-        for (i = MAX(dictionnary_size - 10, 0); i < dictionnary_size; i++) {
+        for (i = MAX(dictionnary->size - 10, 0); i < dictionnary->size; i++) {
             fprintf(stderr, "- (%d)", i + 256);
-            print_string(dictionnary[i]);
+            print_string(dictionnary->strings[i]);
             fprintf(stderr, "\n");
         }
         #endif
