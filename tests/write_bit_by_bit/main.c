@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../lzw-ppm.h"
+#include "../../bit_writer.h"
 
 enum values_range {
     LOW = 0,
@@ -33,7 +33,7 @@ void print_ten_buffer_values(int v) {
             printf("%c", v & (1 << j) ? '1' : '0');
         }
         printf(") :\n");
-        write_bits(v, nbBits);
+        write_bits(v, nbBits, NULL);
         print_buffer();
     }
 }

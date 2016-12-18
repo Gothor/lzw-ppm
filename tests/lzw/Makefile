@@ -15,17 +15,17 @@ all: program
 debug: CFLAGS += -DDEBUG
 debug: program
 
-program: main.o lzw-ppm.o bit_writer.o dictionnary.o string.o
+program: main.o lzw.o bit_writer.o dictionnary.o string.o
 	@echo $@:
-	$(CC) main.o lzw-ppm.o bit_writer.o string.o dictionnary.o -o $(PROGNAME)
+	$(CC) main.o lzw.o bit_writer.o string.o dictionnary.o -o $(PROGNAME)
 
-main.o: main.c ../../lzw-ppm.h
+main.o: main.c ../../lzw.h
 	@echo $@:
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
-lzw-ppm.o: ../../lzw-ppm.c ../../bit_writer.h ../../string.h
+lzw.o: ../../lzw.c ../../bit_writer.h ../../string.h
 	@echo $@:
-	$(CC) $(CFLAGS) -c ../../lzw-ppm.c -o lzw-ppm.o
+	$(CC) $(CFLAGS) -c ../../lzw.c -o lzw.o
 
 bit_writer.o: ../../bit_writer.c
 	@echo $@:

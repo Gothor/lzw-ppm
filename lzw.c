@@ -9,7 +9,7 @@
 #include "bit_writer.h"
 #include "string.h"
 #include "dictionnary.h"
-#include "lzw-ppm.h"
+#include "lzw.h"
 
 #define DICTIONNARY_SIZE_INIT   256
 #define NEEDED_BITS_INIT        8
