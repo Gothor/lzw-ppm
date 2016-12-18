@@ -2,12 +2,18 @@
 #include <stdlib.h>
 #include "../../ppm-exploder.h"
 
+#define NB_DST_FILES    4
+
 int main (int argc, char* argv[]) {
     int i;
     int opt = 0;
+    int failed = 0;
     FILE* src = NULL;
-    FILE* dst = NULL;
-    
+    FILE* dst[NB_DST_FILES] = {NULL, NULL, NULL, NULL};
+    FILE* dst_merge = NULL;
+    char* filenames[4] = {".header", ".red", ".green", ".blue"};
+
+    // Des options ?
     for (i = 0; i < argc; i++) {
         if (**(argv + i) == '-') {
             opt++;
@@ -26,6 +32,7 @@ int main (int argc, char* argv[]) {
         return -1;
     }
     
+    // On ouvre nos gentils fichiers
     src = fopen(argv[1], "rb");
     if (src == NULL) {
         fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n",
@@ -33,14 +40,47 @@ int main (int argc, char* argv[]) {
         return -1;
     }
     
-    dst = fopen(".header", "wb");
-    if (src == NULL) {
-        fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s).\n",
-            ".header");
-        return -1;
+    for (i = 0; i < NB_DST_FILES; i++) {
+        dst[i] = fopen(filenames[i], "wb");
+        if (dst[i] == NULL) {
+            fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s)."
+                "\n", filenames[i]);
+            return -1;
+        }
     }
     
-    explode_ppm(src, dst, NULL, NULL, NULL);
+    // On bosse
+    explode_ppm(src, dst[0], dst[1], dst[2], dst[3]);
+    
+    // Et on les referme
+    fclose(src);
+    for (i = 0; i < NB_DST_FILES; i++) {
+        fclose(dst[i]);
+    }
+    
+    if (!failed) {
+        // On ouvre ceux dont on a besoin
+        for (i = 0; i < NB_DST_FILES; i++) {
+            dst[i] = fopen(filenames[i], "rb");
+            if (dst[i] == NULL) {
+                fprintf(stderr, "Impossible d'ouvrir le fichier source (%s).\n",
+                    filenames[i]);
+                return -1;
+            }
+        }
+        
+        dst_merge = fopen(".output.ppm", "wb");
+        if (dst_merge == NULL) {
+            fprintf(stderr, "Impossible d'ouvrir le fichier destination (%s) du "
+                "merge.\n", ".output");
+            return -1;
+        }
+        
+        merge_ppm(dst[0], dst[1], dst[2], dst[3], dst_merge);
+        
+        // Et on les referme
+        fclose(dst_merge);
+    }
     
     return 0;
 }
