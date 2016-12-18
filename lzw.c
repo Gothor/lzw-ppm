@@ -1,7 +1,3 @@
-/**
- * @TODO React properly if realloc of dictionnary and current_word doesn't work
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
