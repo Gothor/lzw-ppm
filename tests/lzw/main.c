@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../lzw-ppm.h"
+#include "../../lzw.h"
 
 /* Options */
 static int lzw = 1;
