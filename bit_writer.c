@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include "bit_writer.h"
 
+#ifdef DEBUG
+static int  lus = 0;
+#endif
+
 static char buffer = 0;
 static int  size = 0;
-static int  lus = 0;
 
 #ifdef DEBUG
     /**
