@@ -49,7 +49,7 @@ int find_in_dictionnary(dictionnary_t* d, string_t* str) {
     int i;
     
     if (str->length == 1)
-        return *str->str;
+        return (unsigned char) *str->str;
     
     for (i = 0; i < d->size; i++) {
         if(d->strings[i] == NULL || d->strings[i]->str == NULL)

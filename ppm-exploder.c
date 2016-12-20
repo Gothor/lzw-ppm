@@ -20,7 +20,7 @@ static int      image_levels = 0;
 // Prototypes
 
 static int      is_a_separator(char c);
-static char     skip_comments();
+static int      skip_comments();
 static int      extract_header();
 
 /*******************************************************************************
@@ -47,7 +47,7 @@ static int is_a_separator(char c) {
 /**
  * Saute la lecture des commentaires.
  */
-static char skip_comments() {
+static int skip_comments() {
     int c;
     while ((c = fgetc(image)) == '#') {
         fputc(c, header);
@@ -67,7 +67,7 @@ static char skip_comments() {
  * Lit l'en-tête du fichier.
  */
 static int extract_header() {
-    char c;
+    int c;
     
     image_height = 0;
     image_width = 0;
@@ -78,7 +78,7 @@ static int extract_header() {
     // Lecture du nombre magique
     if ((c = copy_char(image, header)) != 'P') {
         fprintf(stderr, "Format de fichier incorrect : le premier caractère " \
-        "doit être un 'P'.");
+        "doit être un 'P'. (Premier char : '%d')\n", c);
         return 1;
     }
     if ((c = copy_char(image, header)) != '6') {

@@ -101,6 +101,7 @@ int lzw_ppm(FILE* src, FILE* dst) {
     int newpos;
     int i;
     int t;
+    int c = 0;
     
     source_file = src;
     destination_file = dst;
@@ -158,6 +159,7 @@ int lzw_ppm(FILE* src, FILE* dst) {
             current_word->length = 1;
             pos = current_char;
         }
+        c++;
     }
     #ifdef DEBUG
     fprintf(stderr, "Reste : %d\n", pos);

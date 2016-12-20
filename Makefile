@@ -19,7 +19,7 @@ program: main.o lzw.o bit_writer.o string.o dictionnary.o ppm-exploder.o color.o
 	@echo $@:
 	$(CC) main.o lzw.o bit_writer.o string.o dictionnary.o ppm-exploder.o color.o -o $(PROGNAME)
 
-main.o: main.c lzw.h
+main.o: main.c lzw.h ppm-exploder.h
 	@echo $@:
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
