@@ -478,7 +478,9 @@ int main (int argc, char* argv[]) {
         src_name[0] = argv[opt + 1];
         if (argc - opt == 3) {
             given_dst_name = 1;
-            dst_name[0] = argv[opt + 2];
+            dst_name[0] = malloc(sizeof(*dst_name) * (strlen(argv[opt + 2]) + 5));
+            assert(dst_name[0]);
+            strcpy(dst_name[0], argv[opt + 2]);
         }
         else {
             dst_name[0] = remove_extension(src_name[0]);
@@ -536,7 +538,7 @@ int main (int argc, char* argv[]) {
         fclose(src[0]);
         fclose(dst[0]);
         
-        if (!given_dst_name)
+        if (dst_name != NULL)
             free(dst_name[0]);
     }
     
